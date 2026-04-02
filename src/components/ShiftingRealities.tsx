@@ -52,8 +52,7 @@ export default function ShiftingRealities() {
     lastTerrainX: 0,
     glitchEffect: 0,
     energy: CONFIG.maxEnergy,
-    gravityFlipped: false,
-    _gPrevPressed: false,
+    isGravityOff: false,
     difficultyLevel: 1,
     difficultyTimer: 0,
     particles: [] as { x: number; y: number; vx: number; vy: number; life: number }[],
@@ -143,7 +142,7 @@ export default function ShiftingRealities() {
       frames: 0, cameraX: 0, activeWorld: 'A', switchTimer: CONFIG.switchInterval,
       isDrawing: false, currentLine: null, drawnLines: [], terrainA: [], terrainB: [],
       clouds: [], lastTerrainX: 0, glitchEffect: 0, energy: CONFIG.maxEnergy,
-      gravityFlipped: false, _gPrevPressed: false, difficultyLevel: 1, difficultyTimer: 0, particles: [], bgParticlesB: [],
+      isGravityOff: false, difficultyLevel: 1, difficultyTimer: 0, particles: [], bgParticlesB: [],
     };
 
     player.current = {
@@ -217,16 +216,13 @@ export default function ShiftingRealities() {
       }
       if (s.glitchEffect > 0) s.glitchEffect--;
 
-      // Gravity toggle (inversion) - press G to flip, costs energy while flipped
-      if (keys.current.KeyG && !s._gPrevPressed && s.energy > 5) {
-        s.gravityFlipped = !s.gravityFlipped;
-      }
-      s._gPrevPressed = keys.current.KeyG;
-
-      if (s.gravityFlipped) {
+      // Gravity toggle - hold G to float
+      if (keys.current.KeyG && s.energy > 0) {
+        if (!s.isGravityOff) s.isGravityOff = true;
         s.energy -= CONFIG.energyDrain;
-        if (s.energy <= 0) { s.energy = 0; s.gravityFlipped = false; }
+        if (s.energy <= 0) { s.energy = 0; s.isGravityOff = false; }
       } else {
+        s.isGravityOff = false;
         s.energy = Math.min(CONFIG.maxEnergy, s.energy + CONFIG.energyRegen);
       }
 
@@ -239,7 +235,7 @@ export default function ShiftingRealities() {
       s.drawnLines = s.drawnLines.filter(l => (l.worldX + l.points[l.points.length - 1].x) > s.cameraX - 200);
 
       // Player particles
-      if (s.gravityFlipped) {
+      if (s.isGravityOff) {
         s.particles.push({
           x: p.x + Math.random() * p.width, y: p.y + p.height,
           vx: Math.random() * 2 - 1, vy: Math.random() * 2, life: 1.0,
@@ -264,8 +260,8 @@ export default function ShiftingRealities() {
 
       // Physics
       p.prevY = p.y;
-      if (s.gravityFlipped) {
-        p.vy -= CONFIG.gravity;
+      if (s.isGravityOff) {
+        p.vy = Math.sin(s.frames * 0.1) * 0.5;
       } else {
         p.vy += CONFIG.gravity;
       }
@@ -290,19 +286,10 @@ export default function ShiftingRealities() {
           continue;
         }
 
-        if (!s.gravityFlipped) {
-          // Normal gravity: land on TOP of platforms
-          if (p.x < t.x + t.width && p.x + p.width > t.x &&
-              p.y + p.height >= t.y && p.prevY + p.height <= t.y + 15 && p.vy >= 0) {
-            p.y = t.y - p.height; p.vy = 0; grounded = true; break;
-          }
-        } else {
-          // Flipped gravity: collide with BOTTOM of platforms (ceiling run)
-          const platBottom = t.y + t.height;
-          if (p.x < t.x + t.width && p.x + p.width > t.x &&
-              p.y <= platBottom && p.prevY >= platBottom - 15 && p.vy <= 0) {
-            p.y = platBottom; p.vy = 0; grounded = true; break;
-          }
+        // Normal gravity: land on TOP of platforms
+        if (p.x < t.x + t.width && p.x + p.width > t.x &&
+            p.y + p.height >= t.y && p.prevY + p.height <= t.y + 15 && p.vy >= 0) {
+          p.y = t.y - p.height; p.vy = 0; grounded = true; break;
         }
       }
 
@@ -314,14 +301,8 @@ export default function ShiftingRealities() {
             if (p.x + p.width > Math.min(p1.x, p2.x) && p.x < Math.max(p1.x, p2.x)) {
               const tt = (p.x + p.width / 2 - p1.x) / (p2.x - p1.x);
               const lineY = p1.y + tt * (p2.y - p1.y);
-              if (!s.gravityFlipped) {
-                if (p.y + p.height >= lineY - 5 && p.prevY + p.height <= lineY + 15 && p.vy >= 0) {
-                  p.y = lineY - p.height; p.vy = 0; grounded = true; break;
-                }
-              } else {
-                if (p.y <= lineY + 5 && p.prevY >= lineY - 15 && p.vy <= 0) {
-                  p.y = lineY; p.vy = 0; grounded = true; break;
-                }
+              if (p.y + p.height >= lineY - 5 && p.prevY + p.height <= lineY + 15 && p.vy >= 0) {
+                p.y = lineY - p.height; p.vy = 0; grounded = true; break;
               }
             }
           }
@@ -331,10 +312,9 @@ export default function ShiftingRealities() {
 
       p.isGrounded = grounded;
       if ((keys.current.Space || keys.current.ArrowUp || keys.current.KeyW) && p.isGrounded) {
-        p.vy = s.gravityFlipped ? -CONFIG.jumpForce : CONFIG.jumpForce; p.isGrounded = false;
+        p.vy = CONFIG.jumpForce; p.isGrounded = false;
       }
-      // Die if falling off screen (top or bottom)
-      if (p.y > CONFIG.worldHeight + 100 || p.y < -100) setIsGameOver(true);
+      if (p.y > CONFIG.worldHeight + 100) setIsGameOver(true);
     };
 
     // ======= DRAWING =======
@@ -374,7 +354,7 @@ export default function ShiftingRealities() {
       ctx.save();
       ctx.translate(-s.cameraX, worldOffsetY);
       if (s.glitchEffect > 0) ctx.translate(Math.random() * 6 - 3, 0);
-      drawPlayer(ctx, p.x, p.y, s.switchTimer, s.gravityFlipped);
+      drawPlayer(ctx, p.x, p.y, s.switchTimer, s.isGravityOff);
       ctx.restore();
 
       drawUI(ctx);
@@ -701,12 +681,12 @@ export default function ShiftingRealities() {
       ctx.restore();
     };
 
-    const drawPlayer = (ctx: CanvasRenderingContext2D, x: number, y: number, switchTimer: number, gravityFlipped: boolean) => {
+    const drawPlayer = (ctx: CanvasRenderingContext2D, x: number, y: number, switchTimer: number, isGravityOff: boolean) => {
       const u = 30 / 12;
       const v = 40 / 16;
 
       let pulseColor: string | null = null;
-      if (gravityFlipped) {
+      if (isGravityOff) {
         pulseColor = '#00ffcc';
         ctx.shadowBlur = 20;
         ctx.shadowColor = '#00ffcc';
@@ -728,11 +708,6 @@ export default function ShiftingRealities() {
 
       ctx.save();
       ctx.translate(x, y);
-      // Flip vertically when gravity is inverted
-      if (gravityFlipped) {
-        ctx.translate(0, 40);
-        ctx.scale(1, -1);
-      }
 
       // Hat
       ctx.fillStyle = R;
@@ -790,7 +765,7 @@ export default function ShiftingRealities() {
       ctx.fillStyle = '#fff';
       ctx.shadowBlur = 10;
       ctx.shadowColor = '#00ffcc';
-      ctx.font = 'bold 24px monospace';
+      ctx.font = 'bold 24px "Pixel Game", monospace';
       ctx.textAlign = 'left';
       ctx.fillText(`SCORE: ${Math.floor(s.cameraX / 10)}`, 24, 40);
       ctx.restore();
@@ -804,7 +779,7 @@ export default function ShiftingRealities() {
 
       // Label
       ctx.fillStyle = isLow ? '#00ff00' : 'rgba(255,255,255,0.6)';
-      ctx.font = 'bold 10px monospace';
+      ctx.font = 'bold 10px "Pixel Game", monospace';
       ctx.textAlign = 'center';
       ctx.fillText('REALITY STABILITY', canvas.width / 2, ty - 4);
 
@@ -833,7 +808,7 @@ export default function ShiftingRealities() {
       const ey = 60;
 
       ctx.fillStyle = 'rgba(255,255,255,0.5)';
-      ctx.font = 'bold 9px monospace';
+      ctx.font = 'bold 9px "Pixel Game", monospace';
       ctx.textAlign = 'left';
       ctx.fillText('GRAVITY CORE', ex, ey - 4);
 
@@ -842,7 +817,7 @@ export default function ShiftingRealities() {
       ctx.fill();
 
       ctx.save();
-      if (s.gravityFlipped) {
+      if (s.isGravityOff) {
         ctx.shadowBlur = 8;
         ctx.shadowColor = '#00ffcc';
         ctx.fillStyle = '#00ffcc';
@@ -856,10 +831,10 @@ export default function ShiftingRealities() {
       // World indicator
       ctx.save();
       ctx.textAlign = 'right';
-      ctx.font = 'bold 11px monospace';
+      ctx.font = 'bold 11px "Pixel Game", monospace';
       ctx.fillStyle = 'rgba(255,255,255,0.4)';
       ctx.fillText('ACTIVE DIMENSION', canvas.width - 24, 28);
-      ctx.font = 'bold 16px monospace';
+      ctx.font = 'bold 16px "Pixel Game", monospace';
       if (s.activeWorld === 'A') {
         ctx.fillStyle = '#55efc4';
         ctx.fillText('◈ PAST: ANALOG', canvas.width - 24, 48);
@@ -874,7 +849,7 @@ export default function ShiftingRealities() {
       // Difficulty indicator
       ctx.save();
       ctx.textAlign = 'right';
-      ctx.font = 'bold 9px monospace';
+      ctx.font = 'bold 9px "Pixel Game", monospace';
       ctx.fillStyle = 'rgba(255,255,255,0.25)';
       ctx.fillText(`LEVEL ${s.difficultyLevel}`, canvas.width - 24, 64);
       ctx.restore();

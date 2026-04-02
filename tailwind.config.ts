@@ -13,6 +13,11 @@ export default {
       },
     },
     extend: {
+      fontFamily: {
+        pixel: ['"Pixel Game"', 'monospace'],
+        sans: ['"Pixel Game"', 'monospace'],
+        mono: ['"Pixel Game"', 'monospace'],
+      },
       colors: {
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
