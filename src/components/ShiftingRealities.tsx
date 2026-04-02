@@ -765,7 +765,7 @@ export default function ShiftingRealities() {
       ctx.fillStyle = '#fff';
       ctx.shadowBlur = 10;
       ctx.shadowColor = '#00ffcc';
-      ctx.font = 'bold 24px monospace';
+      ctx.font = 'bold 24px "Pixel Game", monospace';
       ctx.textAlign = 'left';
       ctx.fillText(`SCORE: ${Math.floor(s.cameraX / 10)}`, 24, 40);
       ctx.restore();
@@ -779,7 +779,7 @@ export default function ShiftingRealities() {
 
       // Label
       ctx.fillStyle = isLow ? '#00ff00' : 'rgba(255,255,255,0.6)';
-      ctx.font = 'bold 10px monospace';
+      ctx.font = 'bold 10px "Pixel Game", monospace';
       ctx.textAlign = 'center';
       ctx.fillText('REALITY STABILITY', canvas.width / 2, ty - 4);
 
@@ -808,7 +808,7 @@ export default function ShiftingRealities() {
       const ey = 60;
 
       ctx.fillStyle = 'rgba(255,255,255,0.5)';
-      ctx.font = 'bold 9px monospace';
+      ctx.font = 'bold 9px "Pixel Game", monospace';
       ctx.textAlign = 'left';
       ctx.fillText('GRAVITY CORE', ex, ey - 4);
 
@@ -831,10 +831,10 @@ export default function ShiftingRealities() {
       // World indicator
       ctx.save();
       ctx.textAlign = 'right';
-      ctx.font = 'bold 11px monospace';
+      ctx.font = 'bold 11px "Pixel Game", monospace';
       ctx.fillStyle = 'rgba(255,255,255,0.4)';
       ctx.fillText('ACTIVE DIMENSION', canvas.width - 24, 28);
-      ctx.font = 'bold 16px monospace';
+      ctx.font = 'bold 16px "Pixel Game", monospace';
       if (s.activeWorld === 'A') {
         ctx.fillStyle = '#55efc4';
         ctx.fillText('◈ PAST: ANALOG', canvas.width - 24, 48);
@@ -849,7 +849,7 @@ export default function ShiftingRealities() {
       // Difficulty indicator
       ctx.save();
       ctx.textAlign = 'right';
-      ctx.font = 'bold 9px monospace';
+      ctx.font = 'bold 9px "Pixel Game", monospace';
       ctx.fillStyle = 'rgba(255,255,255,0.25)';
       ctx.fillText(`LEVEL ${s.difficultyLevel}`, canvas.width - 24, 64);
       ctx.restore();
