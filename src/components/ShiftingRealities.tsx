@@ -238,7 +238,7 @@ export default function ShiftingRealities() {
       s.drawnLines = s.drawnLines.filter(l => (l.worldX + l.points[l.points.length - 1].x) > s.cameraX - 200);
 
       // Player particles
-      if (s.isGravityOff) {
+      if (s.gravityFlipped) {
         s.particles.push({
           x: p.x + Math.random() * p.width, y: p.y + p.height,
           vx: Math.random() * 2 - 1, vy: Math.random() * 2, life: 1.0,
