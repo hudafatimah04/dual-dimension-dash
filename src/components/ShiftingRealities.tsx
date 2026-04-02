@@ -354,7 +354,7 @@ export default function ShiftingRealities() {
       ctx.save();
       ctx.translate(-s.cameraX, worldOffsetY);
       if (s.glitchEffect > 0) ctx.translate(Math.random() * 6 - 3, 0);
-      drawPlayer(ctx, p.x, p.y, s.switchTimer, s.gravityFlipped);
+      drawPlayer(ctx, p.x, p.y, s.switchTimer, s.isGravityOff);
       ctx.restore();
 
       drawUI(ctx);
