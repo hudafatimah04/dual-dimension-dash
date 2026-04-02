@@ -681,12 +681,12 @@ export default function ShiftingRealities() {
       ctx.restore();
     };
 
-    const drawPlayer = (ctx: CanvasRenderingContext2D, x: number, y: number, switchTimer: number, gravityFlipped: boolean) => {
+    const drawPlayer = (ctx: CanvasRenderingContext2D, x: number, y: number, switchTimer: number, isGravityOff: boolean) => {
       const u = 30 / 12;
       const v = 40 / 16;
 
       let pulseColor: string | null = null;
-      if (gravityFlipped) {
+      if (isGravityOff) {
         pulseColor = '#00ffcc';
         ctx.shadowBlur = 20;
         ctx.shadowColor = '#00ffcc';
@@ -708,11 +708,6 @@ export default function ShiftingRealities() {
 
       ctx.save();
       ctx.translate(x, y);
-      // Flip vertically when gravity is inverted
-      if (gravityFlipped) {
-        ctx.translate(0, 40);
-        ctx.scale(1, -1);
-      }
 
       // Hat
       ctx.fillStyle = R;
