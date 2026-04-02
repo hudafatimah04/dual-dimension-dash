@@ -260,8 +260,8 @@ export default function ShiftingRealities() {
 
       // Physics
       p.prevY = p.y;
-      if (s.gravityFlipped) {
-        p.vy -= CONFIG.gravity;
+      if (s.isGravityOff) {
+        p.vy = Math.sin(s.frames * 0.1) * 0.5;
       } else {
         p.vy += CONFIG.gravity;
       }
