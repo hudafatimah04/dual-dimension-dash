@@ -727,6 +727,11 @@ export default function ShiftingRealities() {
 
       ctx.save();
       ctx.translate(x, y);
+      // Flip vertically when gravity is inverted
+      if (gravityFlipped) {
+        ctx.translate(0, 40);
+        ctx.scale(1, -1);
+      }
 
       // Hat
       ctx.fillStyle = R;
