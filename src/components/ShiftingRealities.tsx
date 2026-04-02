@@ -822,7 +822,7 @@ export default function ShiftingRealities() {
       ctx.fill();
 
       ctx.save();
-      if (s.gravityFlipped) {
+      if (s.isGravityOff) {
         ctx.shadowBlur = 8;
         ctx.shadowColor = '#00ffcc';
         ctx.fillStyle = '#00ffcc';
