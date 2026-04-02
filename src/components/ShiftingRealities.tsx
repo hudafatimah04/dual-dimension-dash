@@ -216,16 +216,13 @@ export default function ShiftingRealities() {
       }
       if (s.glitchEffect > 0) s.glitchEffect--;
 
-      // Gravity toggle (inversion) - press G to flip, costs energy while flipped
-      if (keys.current.KeyG && !s._gPrevPressed && s.energy > 5) {
-        s.gravityFlipped = !s.gravityFlipped;
-      }
-      s._gPrevPressed = keys.current.KeyG;
-
-      if (s.gravityFlipped) {
+      // Gravity toggle - hold G to float
+      if (keys.current.KeyG && s.energy > 0) {
+        if (!s.isGravityOff) s.isGravityOff = true;
         s.energy -= CONFIG.energyDrain;
-        if (s.energy <= 0) { s.energy = 0; s.gravityFlipped = false; }
+        if (s.energy <= 0) { s.energy = 0; s.isGravityOff = false; }
       } else {
+        s.isGravityOff = false;
         s.energy = Math.min(CONFIG.maxEnergy, s.energy + CONFIG.energyRegen);
       }
 
