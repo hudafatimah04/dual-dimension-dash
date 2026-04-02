@@ -142,7 +142,7 @@ export default function ShiftingRealities() {
       frames: 0, cameraX: 0, activeWorld: 'A', switchTimer: CONFIG.switchInterval,
       isDrawing: false, currentLine: null, drawnLines: [], terrainA: [], terrainB: [],
       clouds: [], lastTerrainX: 0, glitchEffect: 0, energy: CONFIG.maxEnergy,
-      gravityFlipped: false, _gPrevPressed: false, difficultyLevel: 1, difficultyTimer: 0, particles: [], bgParticlesB: [],
+      isGravityOff: false, difficultyLevel: 1, difficultyTimer: 0, particles: [], bgParticlesB: [],
     };
 
     player.current = {
