@@ -700,12 +700,12 @@ export default function ShiftingRealities() {
       ctx.restore();
     };
 
-    const drawPlayer = (ctx: CanvasRenderingContext2D, x: number, y: number, switchTimer: number, isGravityOff: boolean) => {
+    const drawPlayer = (ctx: CanvasRenderingContext2D, x: number, y: number, switchTimer: number, gravityFlipped: boolean) => {
       const u = 30 / 12;
       const v = 40 / 16;
 
       let pulseColor: string | null = null;
-      if (isGravityOff) {
+      if (gravityFlipped) {
         pulseColor = '#00ffcc';
         ctx.shadowBlur = 20;
         ctx.shadowColor = '#00ffcc';
