@@ -53,6 +53,7 @@ export default function ShiftingRealities() {
     glitchEffect: 0,
     energy: CONFIG.maxEnergy,
     gravityFlipped: false,
+    _gPrevPressed: false,
     difficultyLevel: 1,
     difficultyTimer: 0,
     particles: [] as { x: number; y: number; vx: number; vy: number; life: number }[],
