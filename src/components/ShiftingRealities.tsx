@@ -52,7 +52,8 @@ export default function ShiftingRealities() {
     lastTerrainX: 0,
     glitchEffect: 0,
     energy: CONFIG.maxEnergy,
-    isGravityOff: false,
+    gravityFlipped: false,
+    _gPrevPressed: false,
     difficultyLevel: 1,
     difficultyTimer: 0,
     particles: [] as { x: number; y: number; vx: number; vy: number; life: number }[],
@@ -142,7 +143,7 @@ export default function ShiftingRealities() {
       frames: 0, cameraX: 0, activeWorld: 'A', switchTimer: CONFIG.switchInterval,
       isDrawing: false, currentLine: null, drawnLines: [], terrainA: [], terrainB: [],
       clouds: [], lastTerrainX: 0, glitchEffect: 0, energy: CONFIG.maxEnergy,
-      isGravityOff: false, difficultyLevel: 1, difficultyTimer: 0, particles: [], bgParticlesB: [],
+      gravityFlipped: false, _gPrevPressed: false, difficultyLevel: 1, difficultyTimer: 0, particles: [], bgParticlesB: [],
     };
 
     player.current = {
@@ -216,13 +217,16 @@ export default function ShiftingRealities() {
       }
       if (s.glitchEffect > 0) s.glitchEffect--;
 
-      // Gravity toggle
-      if (keys.current.KeyG && s.energy > 0) {
-        if (!s.isGravityOff) s.isGravityOff = true;
+      // Gravity toggle (inversion) - press G to flip, costs energy while flipped
+      if (keys.current.KeyG && !s._gPrevPressed && s.energy > 5) {
+        s.gravityFlipped = !s.gravityFlipped;
+      }
+      s._gPrevPressed = keys.current.KeyG;
+
+      if (s.gravityFlipped) {
         s.energy -= CONFIG.energyDrain;
-        if (s.energy <= 0) { s.energy = 0; s.isGravityOff = false; }
+        if (s.energy <= 0) { s.energy = 0; s.gravityFlipped = false; }
       } else {
-        s.isGravityOff = false;
         s.energy = Math.min(CONFIG.maxEnergy, s.energy + CONFIG.energyRegen);
       }
 
@@ -235,7 +239,7 @@ export default function ShiftingRealities() {
       s.drawnLines = s.drawnLines.filter(l => (l.worldX + l.points[l.points.length - 1].x) > s.cameraX - 200);
 
       // Player particles
-      if (s.isGravityOff) {
+      if (s.gravityFlipped) {
         s.particles.push({
           x: p.x + Math.random() * p.width, y: p.y + p.height,
           vx: Math.random() * 2 - 1, vy: Math.random() * 2, life: 1.0,
@@ -260,8 +264,8 @@ export default function ShiftingRealities() {
 
       // Physics
       p.prevY = p.y;
-      if (s.isGravityOff) {
-        p.vy = Math.sin(s.frames * 0.1) * 0.5;
+      if (s.gravityFlipped) {
+        p.vy -= CONFIG.gravity;
       } else {
         p.vy += CONFIG.gravity;
       }
@@ -277,16 +281,28 @@ export default function ShiftingRealities() {
       let grounded = false;
 
       for (const t of activeTerrain) {
+        // Spike collision - ANY touch = death (top, side, bottom)
         if (t.type === 'spike') {
-          const sh = { x: t.x + 5, y: t.y + 5, w: t.width - 10, h: t.height - 5 };
+          const sh = { x: t.x + 3, y: t.y + 3, w: t.width - 6, h: t.height - 3 };
           if (p.x < sh.x + sh.w && p.x + p.width > sh.x && p.y < sh.y + sh.h && p.y + p.height > sh.y) {
             setIsGameOver(true); return;
           }
+          continue;
         }
-        if (p.x < t.x + t.width && p.x + p.width > t.x &&
-            p.y + p.height >= t.y && p.prevY + p.height <= t.y + 15 && p.vy >= 0) {
-          if (t.type === 'spike') { setIsGameOver(true); return; }
-          p.y = t.y - p.height; p.vy = 0; grounded = true; break;
+
+        if (!s.gravityFlipped) {
+          // Normal gravity: land on TOP of platforms
+          if (p.x < t.x + t.width && p.x + p.width > t.x &&
+              p.y + p.height >= t.y && p.prevY + p.height <= t.y + 15 && p.vy >= 0) {
+            p.y = t.y - p.height; p.vy = 0; grounded = true; break;
+          }
+        } else {
+          // Flipped gravity: collide with BOTTOM of platforms (ceiling run)
+          const platBottom = t.y + t.height;
+          if (p.x < t.x + t.width && p.x + p.width > t.x &&
+              p.y <= platBottom && p.prevY >= platBottom - 15 && p.vy <= 0) {
+            p.y = platBottom; p.vy = 0; grounded = true; break;
+          }
         }
       }
 
@@ -296,10 +312,16 @@ export default function ShiftingRealities() {
             const p1 = { x: line.worldX + line.points[i].x, y: line.points[i].y };
             const p2 = { x: line.worldX + line.points[i + 1].x, y: line.points[i + 1].y };
             if (p.x + p.width > Math.min(p1.x, p2.x) && p.x < Math.max(p1.x, p2.x)) {
-              const t = (p.x + p.width / 2 - p1.x) / (p2.x - p1.x);
-              const lineY = p1.y + t * (p2.y - p1.y);
-              if (p.y + p.height >= lineY - 5 && p.prevY + p.height <= lineY + 15 && p.vy >= 0) {
-                p.y = lineY - p.height; p.vy = 0; grounded = true; break;
+              const tt = (p.x + p.width / 2 - p1.x) / (p2.x - p1.x);
+              const lineY = p1.y + tt * (p2.y - p1.y);
+              if (!s.gravityFlipped) {
+                if (p.y + p.height >= lineY - 5 && p.prevY + p.height <= lineY + 15 && p.vy >= 0) {
+                  p.y = lineY - p.height; p.vy = 0; grounded = true; break;
+                }
+              } else {
+                if (p.y <= lineY + 5 && p.prevY >= lineY - 15 && p.vy <= 0) {
+                  p.y = lineY; p.vy = 0; grounded = true; break;
+                }
               }
             }
           }
@@ -309,9 +331,10 @@ export default function ShiftingRealities() {
 
       p.isGrounded = grounded;
       if ((keys.current.Space || keys.current.ArrowUp || keys.current.KeyW) && p.isGrounded) {
-        p.vy = CONFIG.jumpForce; p.isGrounded = false;
+        p.vy = s.gravityFlipped ? -CONFIG.jumpForce : CONFIG.jumpForce; p.isGrounded = false;
       }
-      if (p.y > CONFIG.worldHeight + 100) setIsGameOver(true);
+      // Die if falling off screen (top or bottom)
+      if (p.y > CONFIG.worldHeight + 100 || p.y < -100) setIsGameOver(true);
     };
 
     // ======= DRAWING =======
@@ -351,7 +374,7 @@ export default function ShiftingRealities() {
       ctx.save();
       ctx.translate(-s.cameraX, worldOffsetY);
       if (s.glitchEffect > 0) ctx.translate(Math.random() * 6 - 3, 0);
-      drawPlayer(ctx, p.x, p.y, s.switchTimer, s.isGravityOff);
+      drawPlayer(ctx, p.x, p.y, s.switchTimer, s.gravityFlipped);
       ctx.restore();
 
       drawUI(ctx);
@@ -678,12 +701,12 @@ export default function ShiftingRealities() {
       ctx.restore();
     };
 
-    const drawPlayer = (ctx: CanvasRenderingContext2D, x: number, y: number, switchTimer: number, isGravityOff: boolean) => {
+    const drawPlayer = (ctx: CanvasRenderingContext2D, x: number, y: number, switchTimer: number, gravityFlipped: boolean) => {
       const u = 30 / 12;
       const v = 40 / 16;
 
       let pulseColor: string | null = null;
-      if (isGravityOff) {
+      if (gravityFlipped) {
         pulseColor = '#00ffcc';
         ctx.shadowBlur = 20;
         ctx.shadowColor = '#00ffcc';
@@ -705,6 +728,11 @@ export default function ShiftingRealities() {
 
       ctx.save();
       ctx.translate(x, y);
+      // Flip vertically when gravity is inverted
+      if (gravityFlipped) {
+        ctx.translate(0, 40);
+        ctx.scale(1, -1);
+      }
 
       // Hat
       ctx.fillStyle = R;
@@ -814,7 +842,7 @@ export default function ShiftingRealities() {
       ctx.fill();
 
       ctx.save();
-      if (s.isGravityOff) {
+      if (s.gravityFlipped) {
         ctx.shadowBlur = 8;
         ctx.shadowColor = '#00ffcc';
         ctx.fillStyle = '#00ffcc';
