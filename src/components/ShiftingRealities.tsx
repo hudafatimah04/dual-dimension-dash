@@ -480,6 +480,9 @@ export default function ShiftingRealities() {
           ctx.fill();
         });
 
+        // Cyber buildings (parallax silhouettes with lit windows)
+        drawCyberBuildings(ctx, s.cameraX, canvas.width, s.frames);
+
         // Neon grid lines on floor area
         ctx.save();
         ctx.globalAlpha = 0.08;
