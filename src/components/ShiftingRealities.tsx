@@ -173,6 +173,31 @@ export default function ShiftingRealities() {
     setScore(0);
   }, []);
 
+  // Audio: play death sound + stop music when game ends
+  useEffect(() => {
+    if (isGameOver) {
+      stopBgm();
+      playDeathSound();
+    }
+  }, [isGameOver]);
+
+  // Audio: start music once instructions are dismissed and game is running
+  useEffect(() => {
+    if (!showInstructions && !isGameOver) {
+      resumeAudio();
+      startBgm();
+    }
+    return () => {
+      // pause music when instructions show again or game over
+      if (showInstructions || isGameOver) stopBgm();
+    };
+  }, [showInstructions, isGameOver]);
+
+  // Stop music when component unmounts
+  useEffect(() => {
+    return () => stopBgm();
+  }, []);
+
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
