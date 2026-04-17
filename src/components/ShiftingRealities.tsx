@@ -985,7 +985,7 @@ export default function ShiftingRealities() {
               STABILITY SCORE: <span className="text-primary font-black">{score}</span>
             </p>
             <button
-              onClick={resetGame}
+              onClick={() => { resumeAudio(); resetGame(); }}
               className="px-10 py-4 bg-primary text-primary-foreground font-black text-lg rounded-2xl transition-all hover:scale-105 shadow-[0_0_30px_hsl(var(--primary)/0.4)]"
             >
               REBOOT SYSTEM
