@@ -14,9 +14,9 @@ export default {
     },
     extend: {
       fontFamily: {
-        pixel: ['"Pixel Game"', 'monospace'],
-        sans: ['"Pixel Game"', 'monospace'],
-        mono: ['"Pixel Game"', 'monospace'],
+        pixel: ['"Bowlby One"', '"Pixel Game"', 'cursive'],
+        sans: ['"Bowlby One"', '"Pixel Game"', 'cursive'],
+        mono: ['"Bowlby One"', '"Pixel Game"', 'monospace'],
       },
       colors: {
         border: "hsl(var(--border))",

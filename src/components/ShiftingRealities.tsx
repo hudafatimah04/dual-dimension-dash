@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
-import { startBgm, stopBgm, playDeathSound, resumeAudio } from '@/lib/retroAudio';
+import { startBgm, stopBgm, playDeathSound, playJumpSound, resumeAudio } from '@/lib/retroAudio';
 
 // --- Constants & Config ---
 const CONFIG = {
@@ -348,6 +348,7 @@ export default function ShiftingRealities() {
       p.isGrounded = grounded;
       if ((keys.current.Space || keys.current.ArrowUp || keys.current.KeyW) && p.isGrounded) {
         p.vy = CONFIG.jumpForce; p.isGrounded = false;
+        playJumpSound();
       }
       if (p.y > CONFIG.worldHeight + 100) setIsGameOver(true);
     };
@@ -800,7 +801,7 @@ export default function ShiftingRealities() {
       ctx.fillStyle = '#fff';
       ctx.shadowBlur = 10;
       ctx.shadowColor = '#00ffcc';
-      ctx.font = 'bold 24px "Pixel Game", monospace';
+      ctx.font = 'bold 24px "Bowlby One", "Pixel Game", cursive';
       ctx.textAlign = 'left';
       ctx.fillText(`SCORE: ${Math.floor(s.cameraX / 10)}`, 24, 40);
       ctx.restore();
@@ -814,7 +815,7 @@ export default function ShiftingRealities() {
 
       // Label
       ctx.fillStyle = isLow ? '#00ff00' : 'rgba(255,255,255,0.6)';
-      ctx.font = 'bold 10px "Pixel Game", monospace';
+      ctx.font = 'bold 10px "Bowlby One", "Pixel Game", cursive';
       ctx.textAlign = 'center';
       ctx.fillText('REALITY STABILITY', canvas.width / 2, ty - 4);
 
@@ -843,7 +844,7 @@ export default function ShiftingRealities() {
       const ey = 60;
 
       ctx.fillStyle = 'rgba(255,255,255,0.5)';
-      ctx.font = 'bold 9px "Pixel Game", monospace';
+      ctx.font = 'bold 9px "Bowlby One", "Pixel Game", cursive';
       ctx.textAlign = 'left';
       ctx.fillText('GRAVITY CORE', ex, ey - 4);
 
@@ -866,10 +867,10 @@ export default function ShiftingRealities() {
       // World indicator
       ctx.save();
       ctx.textAlign = 'right';
-      ctx.font = 'bold 11px "Pixel Game", monospace';
+      ctx.font = 'bold 11px "Bowlby One", "Pixel Game", cursive';
       ctx.fillStyle = 'rgba(255,255,255,0.4)';
       ctx.fillText('ACTIVE DIMENSION', canvas.width - 24, 28);
-      ctx.font = 'bold 16px "Pixel Game", monospace';
+      ctx.font = 'bold 16px "Bowlby One", "Pixel Game", cursive';
       if (s.activeWorld === 'A') {
         ctx.fillStyle = '#55efc4';
         ctx.fillText('◈ PAST: ANALOG', canvas.width - 24, 48);
@@ -884,7 +885,7 @@ export default function ShiftingRealities() {
       // Difficulty indicator
       ctx.save();
       ctx.textAlign = 'right';
-      ctx.font = 'bold 9px "Pixel Game", monospace';
+      ctx.font = 'bold 9px "Bowlby One", "Pixel Game", cursive';
       ctx.fillStyle = 'rgba(255,255,255,0.25)';
       ctx.fillText(`LEVEL ${s.difficultyLevel}`, canvas.width - 24, 64);
       ctx.restore();
