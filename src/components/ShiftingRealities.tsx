@@ -432,7 +432,7 @@ export default function ShiftingRealities() {
         ctx.fill();
         ctx.restore();
 
-        // Distant mountains/hills
+        // Distant mountains/hills (far parallax)
         ctx.fillStyle = 'rgba(116,185,255,0.3)';
         ctx.beginPath();
         ctx.moveTo(0, CONFIG.worldHeight - 80);
@@ -442,6 +442,22 @@ export default function ShiftingRealities() {
         ctx.lineTo(canvas.width, CONFIG.worldHeight);
         ctx.lineTo(0, CONFIG.worldHeight);
         ctx.fill();
+
+        // Mid-distance darker hills
+        ctx.fillStyle = 'rgba(85,160,200,0.45)';
+        ctx.beginPath();
+        const hillOffset = (s.cameraX * 0.15) % 80;
+        ctx.moveTo(0, CONFIG.worldHeight - 50);
+        for (let mx = -hillOffset; mx <= canvas.width + 80; mx += 80) {
+          const h = 50 + Math.sin(mx * 0.012) * 25 + Math.cos(mx * 0.02) * 12;
+          ctx.lineTo(mx, CONFIG.worldHeight - h);
+        }
+        ctx.lineTo(canvas.width, CONFIG.worldHeight);
+        ctx.lineTo(0, CONFIG.worldHeight);
+        ctx.fill();
+
+        // Background trees (parallax) — deterministic placement
+        drawTrees(ctx, s.cameraX, canvas.width);
 
         // Clouds
         s.clouds.forEach(c => drawCloud(ctx, c.x, c.y, c.size));
