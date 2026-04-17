@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
-import { startBgm, stopBgm, playDeathSound, playJumpSound, resumeAudio } from '@/lib/retroAudio';
+import { startBgm, stopBgm, playDeathSound, playJumpSound, startDrawSound, stopDrawSound, resumeAudio } from '@/lib/retroAudio';
 
 // --- Constants & Config ---
 const CONFIG = {
@@ -177,6 +177,7 @@ export default function ShiftingRealities() {
   useEffect(() => {
     if (isGameOver) {
       stopBgm();
+      stopDrawSound();
       playDeathSound();
     }
   }, [isGameOver]);
@@ -431,7 +432,7 @@ export default function ShiftingRealities() {
         ctx.fill();
         ctx.restore();
 
-        // Distant mountains/hills
+        // Distant mountains/hills (far parallax)
         ctx.fillStyle = 'rgba(116,185,255,0.3)';
         ctx.beginPath();
         ctx.moveTo(0, CONFIG.worldHeight - 80);
@@ -441,6 +442,22 @@ export default function ShiftingRealities() {
         ctx.lineTo(canvas.width, CONFIG.worldHeight);
         ctx.lineTo(0, CONFIG.worldHeight);
         ctx.fill();
+
+        // Mid-distance darker hills
+        ctx.fillStyle = 'rgba(85,160,200,0.45)';
+        ctx.beginPath();
+        const hillOffset = (s.cameraX * 0.15) % 80;
+        ctx.moveTo(0, CONFIG.worldHeight - 50);
+        for (let mx = -hillOffset; mx <= canvas.width + 80; mx += 80) {
+          const h = 50 + Math.sin(mx * 0.012) * 25 + Math.cos(mx * 0.02) * 12;
+          ctx.lineTo(mx, CONFIG.worldHeight - h);
+        }
+        ctx.lineTo(canvas.width, CONFIG.worldHeight);
+        ctx.lineTo(0, CONFIG.worldHeight);
+        ctx.fill();
+
+        // Background trees (parallax) — deterministic placement
+        drawTrees(ctx, s.cameraX, canvas.width);
 
         // Clouds
         s.clouds.forEach(c => drawCloud(ctx, c.x, c.y, c.size));
@@ -462,6 +479,9 @@ export default function ShiftingRealities() {
           ctx.arc(star.x * canvas.width, star.y * CONFIG.worldHeight, star.size, 0, Math.PI * 2);
           ctx.fill();
         });
+
+        // Cyber buildings (parallax silhouettes with lit windows)
+        drawCyberBuildings(ctx, s.cameraX, canvas.width, s.frames);
 
         // Neon grid lines on floor area
         ctx.save();
@@ -717,6 +737,115 @@ export default function ShiftingRealities() {
       ctx.restore();
     };
 
+    // Deterministic pseudo-random in [0,1) from integer seed
+    const hash01 = (n: number) => {
+      const x = Math.sin(n * 127.1 + 311.7) * 43758.5453;
+      return x - Math.floor(x);
+    };
+
+    // ===== World A: parallax background trees =====
+    const drawTrees = (ctx: CanvasRenderingContext2D, cameraX: number, screenW: number) => {
+      const layers = [
+        { parallax: 0.25, spacing: 130, scale: 0.55, alpha: 0.55, hue: 145, lightness: 32, seed: 7 },
+        { parallax: 0.45, spacing: 170, scale: 0.85, alpha: 0.85, hue: 135, lightness: 26, seed: 19 },
+      ];
+      for (const layer of layers) {
+        const offset = cameraX * layer.parallax;
+        const startIdx = Math.floor((offset - 100) / layer.spacing);
+        const endIdx = Math.ceil((offset + screenW + 100) / layer.spacing);
+        for (let i = startIdx; i <= endIdx; i++) {
+          const r1 = hash01(i + layer.seed);
+          const r2 = hash01(i * 2.7 + layer.seed * 1.3);
+          const r3 = hash01(i * 5.1 + layer.seed * 2.1);
+          const xJitter = (r1 - 0.5) * layer.spacing * 0.6;
+          const x = i * layer.spacing - offset + xJitter;
+          if (x < -80 || x > screenW + 80) continue;
+          const baseY = CONFIG.worldHeight - 60 - r2 * 18;
+          const trunkH = (28 + r3 * 18) * layer.scale;
+          const crownR = (22 + r2 * 12) * layer.scale;
+
+          ctx.fillStyle = `rgba(74,48,28,${layer.alpha})`;
+          ctx.fillRect(x - 3 * layer.scale, baseY - trunkH, 6 * layer.scale, trunkH);
+
+          ctx.fillStyle = `hsla(${layer.hue},55%,${layer.lightness}%,${layer.alpha})`;
+          ctx.beginPath();
+          ctx.arc(x, baseY - trunkH - crownR * 0.2, crownR, 0, Math.PI * 2);
+          ctx.arc(x - crownR * 0.55, baseY - trunkH + crownR * 0.1, crownR * 0.75, 0, Math.PI * 2);
+          ctx.arc(x + crownR * 0.55, baseY - trunkH + crownR * 0.1, crownR * 0.75, 0, Math.PI * 2);
+          ctx.arc(x, baseY - trunkH - crownR * 0.7, crownR * 0.7, 0, Math.PI * 2);
+          ctx.fill();
+
+          ctx.fillStyle = `hsla(${layer.hue},65%,${layer.lightness + 15}%,${layer.alpha * 0.6})`;
+          ctx.beginPath();
+          ctx.arc(x - crownR * 0.3, baseY - trunkH - crownR * 0.4, crownR * 0.35, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+    };
+
+    // ===== World B: parallax cyber buildings =====
+    const drawCyberBuildings = (ctx: CanvasRenderingContext2D, cameraX: number, screenW: number, frames: number) => {
+      const layers = [
+        { parallax: 0.18, spacing: 90, alpha: 0.6, baseColor: '#1a0d3a', edgeColor: '#5a2a8c', heightMin: 90, heightMax: 160, seed: 3 },
+        { parallax: 0.38, spacing: 130, alpha: 0.95, baseColor: '#0a0420', edgeColor: '#a040ff', heightMin: 110, heightMax: 220, seed: 11 },
+      ];
+      for (const layer of layers) {
+        const offset = cameraX * layer.parallax;
+        const startIdx = Math.floor((offset - 100) / layer.spacing);
+        const endIdx = Math.ceil((offset + screenW + 100) / layer.spacing);
+        for (let i = startIdx; i <= endIdx; i++) {
+          const r1 = hash01(i + layer.seed);
+          const r2 = hash01(i * 3.7 + layer.seed * 1.7);
+          const r3 = hash01(i * 7.3 + layer.seed * 2.3);
+          const w = layer.spacing * (0.55 + r1 * 0.35);
+          const h = layer.heightMin + r2 * (layer.heightMax - layer.heightMin);
+          const x = i * layer.spacing - offset + (r3 - 0.5) * 12;
+          const y = CONFIG.worldHeight - 60 - h;
+          if (x + w < -20 || x > screenW + 20) continue;
+
+          ctx.globalAlpha = layer.alpha;
+          ctx.fillStyle = layer.baseColor;
+          ctx.fillRect(x, y, w, h);
+
+          ctx.strokeStyle = layer.edgeColor;
+          ctx.lineWidth = 1.5;
+          ctx.shadowBlur = 8;
+          ctx.shadowColor = layer.edgeColor;
+          ctx.strokeRect(x + 0.5, y + 0.5, w - 1, h - 1);
+          ctx.shadowBlur = 0;
+
+          if (r1 > 0.7) {
+            ctx.fillStyle = layer.edgeColor;
+            ctx.fillRect(x + w / 2 - 1, y - 14, 2, 14);
+            const blink = (Math.sin(frames * 0.08 + i) + 1) * 0.5;
+            ctx.fillStyle = `rgba(255,80,200,${0.5 + blink * 0.5})`;
+            ctx.beginPath();
+            ctx.arc(x + w / 2, y - 14, 2.5, 0, Math.PI * 2);
+            ctx.fill();
+          }
+
+          const winCols = Math.max(2, Math.floor(w / 10));
+          const winRows = Math.max(3, Math.floor(h / 14));
+          const winW = 4;
+          const winH = 5;
+          const padX = (w - winCols * (winW + 3)) / 2;
+          for (let cx = 0; cx < winCols; cx++) {
+            for (let cy = 0; cy < winRows; cy++) {
+              const winSeed = hash01(i * 31 + cx * 7 + cy * 13 + layer.seed);
+              if (winSeed > 0.55) {
+                const flicker = winSeed > 0.92 ? (Math.sin(frames * 0.15 + cx + cy) > 0 ? 1 : 0.3) : 1;
+                const hue = winSeed > 0.85 ? 320 : winSeed > 0.7 ? 195 : 280;
+                ctx.fillStyle = `hsla(${hue},90%,65%,${0.85 * flicker})`;
+                ctx.fillRect(x + padX + cx * (winW + 3), y + 8 + cy * (winH + 4), winW, winH);
+              }
+            }
+          }
+          ctx.globalAlpha = 1;
+        }
+      }
+      ctx.shadowBlur = 0;
+    };
+
     const drawPlayer = (ctx: CanvasRenderingContext2D, x: number, y: number, switchTimer: number, isGravityOff: boolean) => {
       const u = 30 / 12;
       const v = 40 / 16;
@@ -926,6 +1055,7 @@ export default function ShiftingRealities() {
       worldX: state.current.cameraX,
       points: [{ x: clientX - rect.left, y: relativeY }],
     };
+    startDrawSound();
   };
 
   const handleMouseMove = (e: React.MouseEvent | React.TouchEvent) => {
@@ -953,6 +1083,7 @@ export default function ShiftingRealities() {
     }
     state.current.isDrawing = false;
     state.current.currentLine = null;
+    stopDrawSound();
   };
 
   useEffect(() => {
