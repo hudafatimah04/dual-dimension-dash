@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
+import { startBgm, stopBgm, playDeathSound, resumeAudio } from '@/lib/retroAudio';
 
 // --- Constants & Config ---
 const CONFIG = {
@@ -170,6 +171,31 @@ export default function ShiftingRealities() {
     setIsGameOver(false);
     setShowInstructions(true);
     setScore(0);
+  }, []);
+
+  // Audio: play death sound + stop music when game ends
+  useEffect(() => {
+    if (isGameOver) {
+      stopBgm();
+      playDeathSound();
+    }
+  }, [isGameOver]);
+
+  // Audio: start music once instructions are dismissed and game is running
+  useEffect(() => {
+    if (!showInstructions && !isGameOver) {
+      resumeAudio();
+      startBgm();
+    }
+    return () => {
+      // pause music when instructions show again or game over
+      if (showInstructions || isGameOver) stopBgm();
+    };
+  }, [showInstructions, isGameOver]);
+
+  // Stop music when component unmounts
+  useEffect(() => {
+    return () => stopBgm();
   }, []);
 
   useEffect(() => {
@@ -959,7 +985,7 @@ export default function ShiftingRealities() {
               STABILITY SCORE: <span className="text-primary font-black">{score}</span>
             </p>
             <button
-              onClick={resetGame}
+              onClick={() => { resumeAudio(); resetGame(); }}
               className="px-10 py-4 bg-primary text-primary-foreground font-black text-lg rounded-2xl transition-all hover:scale-105 shadow-[0_0_30px_hsl(var(--primary)/0.4)]"
             >
               REBOOT SYSTEM
@@ -972,7 +998,7 @@ export default function ShiftingRealities() {
         <div className="absolute inset-0 flex items-center justify-center z-40 px-4">
           <div className="bg-card/95 backdrop-blur-xl p-8 rounded-3xl border border-border shadow-2xl w-full max-w-md">
             <button
-              onClick={() => setShowInstructions(false)}
+              onClick={() => { resumeAudio(); setShowInstructions(false); }}
               className="absolute top-6 right-6 text-muted-foreground hover:text-foreground transition-colors text-xl"
             >
               ✕
@@ -1004,7 +1030,7 @@ export default function ShiftingRealities() {
               ))}
             </div>
             <button
-              onClick={() => setShowInstructions(false)}
+              onClick={() => { resumeAudio(); setShowInstructions(false); }}
               className="w-full py-4 bg-primary text-primary-foreground font-black rounded-2xl transition-all hover:brightness-110 text-lg shadow-[0_0_20px_hsl(var(--primary)/0.3)]"
             >
               START MISSION
