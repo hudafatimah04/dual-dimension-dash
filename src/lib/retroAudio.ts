@@ -159,3 +159,22 @@ export function playDeathSound() {
 export function resumeAudio() {
   ensureCtx();
 }
+
+// Classic arcade "boing" jump sound — quick upward pitch sweep.
+export function playJumpSound() {
+  const c = ensureCtx();
+  if (!c || !sfxGain || !ctx) return;
+  const osc = ctx.createOscillator();
+  const gain = ctx.createGain();
+  osc.type = 'square';
+  const now = ctx.currentTime;
+  osc.frequency.setValueAtTime(440, now);
+  osc.frequency.exponentialRampToValueAtTime(980, now + 0.12);
+  gain.gain.setValueAtTime(0, now);
+  gain.gain.linearRampToValueAtTime(0.35, now + 0.005);
+  gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.18);
+  osc.connect(gain);
+  gain.connect(sfxGain);
+  osc.start(now);
+  osc.stop(now + 0.2);
+}

@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
-import { startBgm, stopBgm, playDeathSound, resumeAudio } from '@/lib/retroAudio';
+import { startBgm, stopBgm, playDeathSound, playJumpSound, resumeAudio } from '@/lib/retroAudio';
 
 // --- Constants & Config ---
 const CONFIG = {
@@ -348,6 +348,7 @@ export default function ShiftingRealities() {
       p.isGrounded = grounded;
       if ((keys.current.Space || keys.current.ArrowUp || keys.current.KeyW) && p.isGrounded) {
         p.vy = CONFIG.jumpForce; p.isGrounded = false;
+        playJumpSound();
       }
       if (p.y > CONFIG.worldHeight + 100) setIsGameOver(true);
     };
