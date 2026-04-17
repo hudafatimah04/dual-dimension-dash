@@ -178,3 +178,70 @@ export function playJumpSound() {
   osc.start(now);
   osc.stop(now + 0.2);
 }
+
+// Continuous pencil-scribble drawing sound (filtered noise loop).
+let drawNoise: AudioBufferSourceNode | null = null;
+let drawGain: GainNode | null = null;
+let drawLfo: OscillatorNode | null = null;
+let drawLfoGain: GainNode | null = null;
+
+export function startDrawSound() {
+  const c = ensureCtx();
+  if (!c || !sfxGain || !ctx || drawNoise) return;
+  // White noise buffer (1s, looped)
+  const len = ctx.sampleRate * 1;
+  const buffer = ctx.createBuffer(1, len, ctx.sampleRate);
+  const data = buffer.getChannelData(0);
+  for (let i = 0; i < len; i++) data[i] = (Math.random() * 2 - 1) * 0.6;
+
+  drawNoise = ctx.createBufferSource();
+  drawNoise.buffer = buffer;
+  drawNoise.loop = true;
+
+  const filter = ctx.createBiquadFilter();
+  filter.type = 'bandpass';
+  filter.frequency.value = 1600;
+  filter.Q.value = 6;
+
+  // LFO modulates filter freq for a "scratchy" texture
+  drawLfo = ctx.createOscillator();
+  drawLfo.type = 'sine';
+  drawLfo.frequency.value = 14;
+  drawLfoGain = ctx.createGain();
+  drawLfoGain.gain.value = 600;
+  drawLfo.connect(drawLfoGain);
+  drawLfoGain.connect(filter.frequency);
+
+  drawGain = ctx.createGain();
+  drawGain.gain.value = 0;
+  drawGain.gain.linearRampToValueAtTime(0.18, ctx.currentTime + 0.04);
+
+  drawNoise.connect(filter);
+  filter.connect(drawGain);
+  drawGain.connect(sfxGain);
+
+  drawNoise.start();
+  drawLfo.start();
+}
+
+export function stopDrawSound() {
+  if (!ctx || !drawNoise || !drawGain || !drawLfo) return;
+  const now = ctx.currentTime;
+  drawGain.gain.cancelScheduledValues(now);
+  drawGain.gain.setValueAtTime(drawGain.gain.value, now);
+  drawGain.gain.linearRampToValueAtTime(0, now + 0.05);
+  const n = drawNoise;
+  const l = drawLfo;
+  setTimeout(() => {
+    try { n.stop(); } catch {
+      /* already stopped */
+    }
+    try { l.stop(); } catch {
+      /* already stopped */
+    }
+  }, 80);
+  drawNoise = null;
+  drawGain = null;
+  drawLfo = null;
+  drawLfoGain = null;
+}
