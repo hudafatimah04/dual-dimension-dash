@@ -177,6 +177,7 @@ export default function ShiftingRealities() {
   useEffect(() => {
     if (isGameOver) {
       stopBgm();
+      stopDrawSound();
       playDeathSound();
     }
   }, [isGameOver]);
