@@ -276,17 +276,26 @@ export default function ShiftingRealities() {
       const activeTerrain = s.activeWorld === 'A' ? s.terrainA : s.terrainB;
       let grounded = false;
 
+      // Pass 1: Spike collision - ANY touch = death (top, side, bottom)
+      // Checked FIRST and separately so landing on a ground tile doesn't skip
+      // a spike that sits on top of it.
       for (const t of activeTerrain) {
-        // Spike collision - ANY touch = death (top, side, bottom)
-        if (t.type === 'spike') {
-          const sh = { x: t.x + 3, y: t.y + 3, w: t.width - 6, h: t.height - 3 };
-          if (p.x < sh.x + sh.w && p.x + p.width > sh.x && p.y < sh.y + sh.h && p.y + p.height > sh.y) {
-            setIsGameOver(true); return;
-          }
-          continue;
+        if (t.type !== 'spike') continue;
+        const sh = { x: t.x + 2, y: t.y + 2, w: t.width - 4, h: t.height - 2 };
+        if (
+          p.x < sh.x + sh.w &&
+          p.x + p.width > sh.x &&
+          p.y < sh.y + sh.h &&
+          p.y + p.height > sh.y
+        ) {
+          setIsGameOver(true);
+          return;
         }
+      }
 
-        // Normal gravity: land on TOP of platforms
+      // Pass 2: Ground/platform landing
+      for (const t of activeTerrain) {
+        if (t.type === 'spike') continue;
         if (p.x < t.x + t.width && p.x + p.width > t.x &&
             p.y + p.height >= t.y && p.prevY + p.height <= t.y + 15 && p.vy >= 0) {
           p.y = t.y - p.height; p.vy = 0; grounded = true; break;
