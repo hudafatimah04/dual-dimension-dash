@@ -926,6 +926,7 @@ export default function ShiftingRealities() {
       worldX: state.current.cameraX,
       points: [{ x: clientX - rect.left, y: relativeY }],
     };
+    startDrawSound();
   };
 
   const handleMouseMove = (e: React.MouseEvent | React.TouchEvent) => {
@@ -953,6 +954,7 @@ export default function ShiftingRealities() {
     }
     state.current.isDrawing = false;
     state.current.currentLine = null;
+    stopDrawSound();
   };
 
   useEffect(() => {
