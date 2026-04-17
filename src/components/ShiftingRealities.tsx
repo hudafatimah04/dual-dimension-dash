@@ -998,7 +998,7 @@ export default function ShiftingRealities() {
         <div className="absolute inset-0 flex items-center justify-center z-40 px-4">
           <div className="bg-card/95 backdrop-blur-xl p-8 rounded-3xl border border-border shadow-2xl w-full max-w-md">
             <button
-              onClick={() => setShowInstructions(false)}
+              onClick={() => { resumeAudio(); setShowInstructions(false); }}
               className="absolute top-6 right-6 text-muted-foreground hover:text-foreground transition-colors text-xl"
             >
               ✕
@@ -1030,7 +1030,7 @@ export default function ShiftingRealities() {
               ))}
             </div>
             <button
-              onClick={() => setShowInstructions(false)}
+              onClick={() => { resumeAudio(); setShowInstructions(false); }}
               className="w-full py-4 bg-primary text-primary-foreground font-black rounded-2xl transition-all hover:brightness-110 text-lg shadow-[0_0_20px_hsl(var(--primary)/0.3)]"
             >
               START MISSION
