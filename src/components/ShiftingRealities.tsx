@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
-import { startBgm, stopBgm, playDeathSound, playJumpSound, resumeAudio } from '@/lib/retroAudio';
+import { startBgm, stopBgm, playDeathSound, playJumpSound, startDrawSound, stopDrawSound, resumeAudio } from '@/lib/retroAudio';
 
 // --- Constants & Config ---
 const CONFIG = {
